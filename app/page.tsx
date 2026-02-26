@@ -13,8 +13,8 @@ export default function HomePage() {
           YouTube Live を開かずにAITuberをテスト
         </p>
         <Button size="lg" asChild>
-          <a href="/api/auth/github">
-            GitHub でログイン
+          <a href="/rooms">
+            はじめる
           </a>
         </Button>
       </section>

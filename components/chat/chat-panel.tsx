@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { CommentList } from "./comment-list";
 import { CommentInput } from "./comment-input";
 import { SuperChatButton } from "./super-chat-button";
 import { useChatStore } from "@/stores/chat-store";
-import { WebSocketClient } from "@/lib/websocket";
+import { useChatPolling } from "@/hooks/use-chat-polling";
+import { toYouTubeMessage } from "@/lib/chat-helpers";
+import type { CommentResponse } from "@/lib/chat-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,10 +17,10 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ roomId, liveChatId }: ChatPanelProps) {
-  const { comments, metrics, connected, addComment, setMetrics, setConnected } =
-    useChatStore();
+  const { comments, connected, addComment } = useChatStore();
   const [author, setAuthor] = useState("");
-  const wsClientRef = useRef<WebSocketClient | null>(null);
+
+  useChatPolling(liveChatId);
 
   // ローカルストレージから著者名を取得
   useEffect(() => {
@@ -27,40 +29,6 @@ export function ChatPanel({ roomId, liveChatId }: ChatPanelProps) {
       setAuthor(savedAuthor);
     }
   }, []);
-
-  // WebSocket 接続
-  useEffect(() => {
-    // WebSocket URL: Durable Object への接続
-    // ViNext では worker エンドポイント経由でアクセス
-    const wsUrl = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
-      window.location.host
-    }/api/ws/${liveChatId}`;
-
-    const client = new WebSocketClient(wsUrl);
-    wsClientRef.current = client;
-
-    // イベントリスナー登録
-    client.on("comment_added", (data) => {
-      addComment(data.comment);
-    });
-
-    client.on("metrics_update", (data) => {
-      setMetrics(data.metrics);
-    });
-
-    // 接続開始
-    client.connect();
-
-    // 接続状態監視
-    const checkConnection = setInterval(() => {
-      setConnected(client.isConnected);
-    }, 1000);
-
-    return () => {
-      clearInterval(checkConnection);
-      client.disconnect();
-    };
-  }, [liveChatId, addComment, setMetrics, setConnected]);
 
   // コメント送信ハンドラ
   const handleSendComment = async (
@@ -83,6 +51,9 @@ export function ChatPanel({ roomId, liveChatId }: ChatPanelProps) {
       if (!response.ok) {
         throw new Error("Failed to send comment");
       }
+
+      const data = await response.json() as CommentResponse;
+      addComment(toYouTubeMessage(data, liveChatId));
     } catch (error) {
       console.error("Failed to send comment:", error);
     }
@@ -111,6 +82,9 @@ export function ChatPanel({ roomId, liveChatId }: ChatPanelProps) {
       if (!response.ok) {
         throw new Error("Failed to send super chat");
       }
+
+      const data = await response.json() as CommentResponse;
+      addComment(toYouTubeMessage(data, liveChatId));
     } catch (error) {
       console.error("Failed to send super chat:", error);
     }
@@ -123,13 +97,11 @@ export function ChatPanel({ roomId, liveChatId }: ChatPanelProps) {
           <CardTitle className="text-xl">ライブチャット</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={connected ? "default" : "destructive"}>
-              {connected ? "接続中" : "切断"}
+              {connected ? "オンライン" : "切断"}
             </Badge>
-            {metrics && (
-              <span className="text-xs text-muted-foreground">
-                {metrics.messageCount} コメント
-              </span>
-            )}
+            <span className="text-xs text-muted-foreground">
+              {comments.length} コメント
+            </span>
           </div>
         </div>
       </CardHeader>

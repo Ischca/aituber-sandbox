@@ -1,3 +1,8 @@
+// ============================================================
+// Cloudflare Workers デプロイ専用の Durable Object
+// ローカル開発では devStore (lib/dev-store.ts) が同等の機能を提供する
+// ============================================================
+
 import { DurableObject } from "cloudflare:workers";
 
 interface Comment {

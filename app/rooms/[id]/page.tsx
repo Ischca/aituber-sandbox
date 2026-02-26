@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { fetchRoom, startSession, stopSession } from "@/lib/api";
+import { fetchRoom, startSession, stopSession, updateRoom } from "@/lib/api";
 import type { Room } from "@/types/room";
 import type { Scenario } from "@/types/scenario";
 import { ChatPanel } from "@/components/chat/chat-panel";
@@ -10,8 +10,9 @@ import { RoomStatusBadge } from "@/components/room/room-status";
 import { ScenarioSelector } from "@/components/scenario/scenario-selector";
 import { ScenarioPlayer } from "@/components/scenario/scenario-player";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 export default function RoomDetailPage() {
   const params = useParams();
@@ -21,6 +22,11 @@ export default function RoomDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
+  const [streamTitle, setStreamTitle] = useState("");
+  const [channelName, setChannelName] = useState("");
+  const [streamUrl, setStreamUrl] = useState("");
+  const [streamDescription, setStreamDescription] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -36,8 +42,24 @@ export default function RoomDetailPage() {
       setError(result.error);
     } else if (result.data) {
       setRoom(result.data);
+      setStreamTitle(result.data.streamTitle || "");
+      setChannelName(result.data.channelName || "");
+      setStreamUrl(result.data.streamUrl || "");
+      setStreamDescription(result.data.description || "");
     }
     setLoading(false);
+  }
+
+  async function handleSaveStream() {
+    setSaving(true);
+    const result = await updateRoom(id, {
+      streamTitle: streamTitle || undefined,
+      channelName: channelName || undefined,
+      streamUrl: streamUrl || undefined,
+      description: streamDescription || undefined,
+    });
+    if (result.data) setRoom(result.data);
+    setSaving(false);
   }
 
   async function handleStart() {
@@ -95,7 +117,13 @@ export default function RoomDetailPage() {
           </div>
           <p className="text-sm text-muted-foreground font-mono">{room.liveChatId}</p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <a href={`/watch/${room.liveChatId}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-1" />
+              視聴者ページ
+            </a>
+          </Button>
           {room.status !== "active" ? (
             <Button onClick={handleStart} disabled={actionLoading}>
               {actionLoading ? "開始中..." : "セッション開始"}
@@ -167,6 +195,54 @@ export default function RoomDetailPage() {
               <code className="block rounded bg-secondary px-2 py-1 text-xs break-all">
                 live_chat_id = &quot;{room.liveChatId}&quot;
               </code>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">ストリーム設定</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">配信タイトル</label>
+                <Input
+                  placeholder="配信タイトル"
+                  value={streamTitle}
+                  onChange={(e) => setStreamTitle(e.target.value)}
+                  maxLength={200}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">チャンネル名</label>
+                <Input
+                  placeholder="チャンネル名"
+                  value={channelName}
+                  onChange={(e) => setChannelName(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">HLS URL</label>
+                <Input
+                  placeholder="http://localhost:8888/stream/live/index.m3u8"
+                  value={streamUrl}
+                  onChange={(e) => setStreamUrl(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">説明</label>
+                <textarea
+                  placeholder="配信の説明..."
+                  value={streamDescription}
+                  onChange={(e) => setStreamDescription(e.target.value)}
+                  maxLength={5000}
+                  rows={3}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <Button onClick={handleSaveStream} disabled={saving} className="w-full" size="sm">
+                {saving ? "保存中..." : "保存"}
+              </Button>
             </CardContent>
           </Card>
 

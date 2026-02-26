@@ -7,6 +7,12 @@ export interface Room {
   liveChatId: string;
   status: RoomStatus;
   createdAt: number;
+  commentCount?: number;
+  streamUrl?: string;
+  streamTitle?: string;
+  channelName?: string;
+  channelAvatarUrl?: string;
+  description?: string;
 }
 
 export interface RoomSession {
@@ -20,4 +26,9 @@ export interface RoomSession {
 
 export interface CreateRoomRequest {
   name: string;
+  streamUrl?: string;
+  streamTitle?: string;
+  channelName?: string;
+  channelAvatarUrl?: string;
+  description?: string;
 }

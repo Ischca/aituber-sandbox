@@ -125,6 +125,41 @@ export async function addComment(
   }
 }
 
+export async function fetchRoomByLiveChatId(liveChatId: string): Promise<ApiResponse<Room>> {
+  try {
+    const response = await fetch(`/api/rooms?liveChatId=${encodeURIComponent(liveChatId)}`);
+    if (!response.ok) {
+      const body = await parseJson<{ error?: string }>(response);
+      return { error: body.error || "Failed to fetch room" };
+    }
+    const body = await parseJson<{ room: Room }>(response);
+    return { data: body.room };
+  } catch {
+    return { error: "Failed to fetch room" };
+  }
+}
+
+export async function updateRoom(
+  id: string,
+  updates: Partial<Pick<Room, 'name' | 'streamUrl' | 'streamTitle' | 'channelName' | 'channelAvatarUrl' | 'description'>>
+): Promise<ApiResponse<Room>> {
+  try {
+    const response = await fetch(`/api/rooms/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) {
+      const body = await parseJson<{ error?: string }>(response);
+      return { error: body.error || "Failed to update room" };
+    }
+    const body = await parseJson<{ room: Room }>(response);
+    return { data: body.room };
+  } catch {
+    return { error: "Failed to update room" };
+  }
+}
+
 export async function fetchScenarios(): Promise<ApiResponse<Scenario[]>> {
   try {
     const response = await fetch("/api/scenarios");

@@ -22,6 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="/rooms" className="text-sm text-muted-foreground hover:text-foreground">
                 ルーム
               </a>
+              <a href="/scenarios" className="text-sm text-muted-foreground hover:text-foreground">
+                シナリオ
+              </a>
             </div>
           </nav>
         </header>

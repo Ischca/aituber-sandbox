@@ -2,10 +2,6 @@
   "name": "aituber-sandbox",
   "compatibility_date": "2025-12-01",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "worker/index.ts",
-  "assets": {
-    "directory": "dist/client"
-  },
   "d1_databases": [
     {
       "binding": "DB",
